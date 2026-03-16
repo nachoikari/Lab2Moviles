@@ -1,10 +1,10 @@
-import 'package:lab2/Models/PlaceNode.dart';
+import 'package:lab2/Models/graph_node.dart';
 
 class Graph {
-  final Map<String, PlaceNode> _nodes = {};
+  final Map<String, GraphNode> _nodes = {};
   final Map<String, List<String>> _adjacencyList = {};
 
-  void addNode(PlaceNode node) {
+  void addNode(GraphNode node) {
     _nodes[node.id] = node;
     _adjacencyList.putIfAbsent(node.id, () => []);
   }
