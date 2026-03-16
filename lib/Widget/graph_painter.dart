@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:lab2/Models/graph_edge.dart';
 import 'package:lab2/Models/graph_node.dart';
@@ -6,10 +5,16 @@ import 'package:lab2/Models/graph_node.dart';
 class GraphPainter extends CustomPainter {
   final List<GraphNode> nodes;
   final List<GraphEdge> edges;
+  final Set<String> selectedNodeIds;
+  final Offset? pendingNodePosition;
+  final String? pendingNodeLabel;
 
   GraphPainter({
     required this.nodes,
     required this.edges,
+    this.selectedNodeIds = const <String>{},
+    this.pendingNodePosition,
+    this.pendingNodeLabel,
   });
 
   @override
@@ -19,18 +24,20 @@ class GraphPainter extends CustomPainter {
       ..strokeWidth = 2;
 
     final highlightedLinePaint = Paint()
-      ..color = Colors.red
-      ..strokeWidth = 4;
+      ..color = Colors.black
+      ..strokeWidth = 2;
 
-    final nodePaint = Paint()..color = Colors.blue;
+    final normalNodePaint = Paint()..color = Colors.blue;
+    final selectedNodePaint = Paint()..color = Colors.green;
+    final pendingNodePaint = Paint()..color = Colors.green.withOpacity(0.35);
+    final pendingOutlinePaint = Paint()
+      ..color = Colors.green
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
 
-    final textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-    );
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
 
-    final nodeMap = {
-      for (final node in nodes) node.id: node,
-    };
+    final nodeMap = {for (final node in nodes) node.id: node};
 
     for (final edge in edges) {
       final fromNode = nodeMap[edge.from];
@@ -48,14 +55,15 @@ class GraphPainter extends CustomPainter {
     }
 
     for (final node in nodes) {
-      canvas.drawCircle(node.position, 24, nodePaint);
+      canvas.drawCircle(
+        node.position,
+        24,
+        selectedNodeIds.contains(node.id) ? selectedNodePaint : normalNodePaint,
+      );
 
       textPainter.text = TextSpan(
         text: node.label,
-        style: const TextStyle(
-          color: Colors.black,
-          fontSize: 14,
-        ),
+        style: const TextStyle(color: Colors.black, fontSize: 14),
       );
 
       textPainter.layout();
@@ -67,10 +75,39 @@ class GraphPainter extends CustomPainter {
 
       textPainter.paint(canvas, textOffset);
     }
+
+    if (pendingNodePosition != null) {
+      canvas.drawCircle(pendingNodePosition!, 24, pendingNodePaint);
+      canvas.drawCircle(pendingNodePosition!, 24, pendingOutlinePaint);
+
+      if (pendingNodeLabel != null && pendingNodeLabel!.isNotEmpty) {
+        textPainter.text = TextSpan(
+          text: pendingNodeLabel!,
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
+        );
+
+        textPainter.layout();
+
+        final previewTextOffset = Offset(
+          pendingNodePosition!.dx - (textPainter.width / 2),
+          pendingNodePosition!.dy + 30,
+        );
+
+        textPainter.paint(canvas, previewTextOffset);
+      }
+    }
   }
 
   @override
   bool shouldRepaint(covariant GraphPainter oldDelegate) {
-    return oldDelegate.nodes != nodes || oldDelegate.edges != edges;
+    return oldDelegate.nodes != nodes ||
+        oldDelegate.edges != edges ||
+        oldDelegate.selectedNodeIds != selectedNodeIds ||
+        oldDelegate.pendingNodePosition != pendingNodePosition ||
+        oldDelegate.pendingNodeLabel != pendingNodeLabel;
   }
 }
